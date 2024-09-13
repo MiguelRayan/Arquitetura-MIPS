@@ -2,57 +2,57 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MipsInstrucao {
-    private Set<String> destinationOps;
-    private Set<String> sourceOps;
-    private Set<String> memoryOps;
+    private Set<String> operaDestino;
+    private Set<String> operaDado;
+    private Set<String> operaMemoria;
 
-    public MipsInstrucao() {
-        destinationOps = new HashSet<>();
-        sourceOps = new HashSet<>();
-        memoryOps = new HashSet<>();
+    public MipsInstrucao(){
+        operaDestino = new HashSet<>();
+        operaDado = new HashSet<>();
+        operaMemoria = new HashSet<>();
 
-        initDestinationOps();
-        initSourceOps();
-        initMemoryOps();
+        initoperaDestino();
+        initoperaDado();
+        initoperaMemoria();
     }
 
-    private void initDestinationOps() {
+    private void initoperaDestino(){
         String[] ops = {
             "lb", "lh", "lwl", "lw", "lbu", "lhu", "lwr", "add", "addu", "sub", "subu",
             "and", "or", "xor", "nor", "slt", "sltu", "addi", "addiu", "slti", "sltiu",
             "andi", "ori", "xori", "lui", "sll", "srl", "sra", "sllv", "srlv", "srav",
             "mfhi", "mflo", "jalr"
         };
-        for (String op : ops) {
-            destinationOps.add(op);
+        for(String op : ops){
+            operaDestino.add(op);
         }
     }
 
-    private void initSourceOps() {
+    private void initoperaDado(){
         String[] ops = {
             "sw", "sb", "sh", "swl", "swr", "mthi", "mtlo", "mult", "multu", "div", "divu",
             "jr", "bltz", "bgez", "bltzal", "bgezal", "j", "jal"
         };
-        for (String op : ops) {
-            sourceOps.add(op);
+        for(String op : ops) {
+            operaDado.add(op);
         }
     }
 
-    private void initMemoryOps() {
+    private void initoperaMemoria(){
         String[] ops = {
             "lb", "lh", "lwl", "lw", "lbu", "lhu", "lwr", "sb", "sh", "swl", "sw", "swr",
             "j", "jal", "jr", "jalr", "sll", "srl", "sra", "sllv", "srlv", "srav"
         };
-        for (String op : ops) {
-            memoryOps.add(op);
+        for(String op : ops){
+            operaMemoria.add(op);
         }
     }
 
-    public boolean isDestination(String operation) {
-        return destinationOps.contains(operation);
+    public boolean isDestination(String operation){
+        return operaDestino.contains(operation);
     }
 
-    public boolean isMemoryOperation(String operation) {
-        return memoryOps.contains(operation);
+    public boolean isMemoryOperation(String operation){
+        return operaMemoria.contains(operation);
     }
 }

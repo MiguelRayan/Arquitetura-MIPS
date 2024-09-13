@@ -11,11 +11,11 @@ public class Tecnica {
     private TecnicaTipo tecnicaTipo;
 
     // Construtor para definir a técnica a ser utilizada
-    public Tecnica(TecnicaTipo tecnicaTipo) {
+    public Tecnica(TecnicaTipo tecnicaTipo){
         this.tecnicaTipo = tecnicaTipo;
     }
 
-    public List<Instrucao> processarInstrucoes(List<Instrucao> pipeline) {
+    public List<Instrucao> processarInstrucoes(List<Instrucao> pipeline){
         switch (tecnicaTipo) {
             case BOLHA:
                 return aplicarTecnicaBolha(pipeline);
@@ -28,35 +28,35 @@ public class Tecnica {
         }
     }
 
-    private List<Instrucao> aplicarTecnicaBolha(List<Instrucao> pipeline) {
+    private List<Instrucao> aplicarTecnicaBolha(List<Instrucao> pipeline){
         List<Instrucao> result = new ArrayList<>();
         List<Instrucao> nops = new ArrayList<>();
 
-        for (int i = 0; i < pipeline.size() - 1; i++) {
+        for (int i=0; i<pipeline.size()-1; i++){
             Instrucao first = pipeline.get(i);
             Instrucao second = pipeline.get(i + 1);
             Instrucao third = (i < pipeline.size() - 2) ? pipeline.get(i + 2) : null;
 
-            int nopCount = countNops(first, second, third);
-            Instrucao[] nopInstrucaos = generateNops(pipeline, i);
+            int nopCount = NOPS (first, second, third);
+            Instrucao[] nopInstrucaos = geraNOPS (pipeline, i);
 
             addInstrucaosToResult(first, nopCount, result, nopInstrucaos, nops);
         }
 
         result.add(pipeline.get(pipeline.size() - 1));
-        reorderInstrucaos(result, nops);
+        reord(result, nops);
 
         return result;
     }
 
     private List<Instrucao> aplicarTecnicaAdiamento(List<Instrucao> pipeline) {
         // Implemente a lógica específica para a técnica de adiamento aqui
-        return pipeline; // Placeholder
+        return pipeline;
     }
 
     private List<Instrucao> aplicarTecnicaReordenamento(List<Instrucao> pipeline) {
         // Implemente a lógica específica para a técnica de reordenamento aqui
-        return pipeline; // Placeholder
+        return pipeline;
     }
 
     private void addInstrucaosToResult(Instrucao instrucao, int nopCount, List<Instrucao> result,
@@ -76,37 +76,37 @@ public class Tecnica {
         }
     }
 
-    private void reorderInstrucaos(List<Instrucao> result, List<Instrucao> nops) {
-        for (int i = 0; i < result.size(); i++) {
-            Instrucao current = result.get(i);
-            if (current.getOperation() == null || hasDependency(i, result)) {
+    private void reord (List<Instrucao> result, List<Instrucao> nops){
+        for(int i=0; i<result.size(); i++){
+            Instrucao media = result.get(i);
+            if(media.getop() == null || depfimencia (i, result)){
                 continue;
             }
 
-            for (int j = 0; j < nops.size(); j++) {
+            for(int j=0; j<nops.size(); j++){
                 Instrucao nop = nops.get(j);
 
-                if (nop.getOperation() != null || 
-                    !nop.getReg1().contains(current.getReg1()) &&
-                    !nop.getReg3().contains(current.getReg2()) &&
-                    !nop.getReg3().contains(current.getReg3())) {
+                if(nop.getop() != null || 
+                    !nop.getr1().contains(media.getr1()) &&
+                    !nop.getr3().contains(media.getr2()) &&
+                    !nop.getr3().contains(media.getr3())) {
                     continue;
                 }
 
-                result.remove(current);
-                nops.set(j, current);
+                result.remove(media);
+                nops.set(j, media);
                 i--;
                 break;
             }
         }
 
-        for (int i = 0; i < result.size(); i++) {
-            Instrucao current = result.get(i);
-            if (current.getOperation() != null) {
+        for(int i=0; i<result.size(); i++){
+            Instrucao media = result.get(i);
+            if(media.getop() != null){
                 continue;
             }
-            for (Instrucao nop : nops) {
-                if (nop.getOperation() == null) {
+            for(Instrucao nop : nops){
+                if(nop.getop() == null){
                     result.set(i, nop);
                     nops.remove(nop);
                     break;
@@ -115,32 +115,32 @@ public class Tecnica {
         }
     }
 
-    private boolean hasDependency(int index, List<Instrucao> result) {
-        Instrucao current = result.get(index);
-        int start = Math.max(0, index - 15);
-        int end = Math.min(result.size() - 1, index + 15);
+    private boolean depfimencia (int index, List<Instrucao> result){
+        Instrucao media = result.get(index);
+        int inicia = Math.max(0, index - 15);
+        int fim = Math.min(result.size() - 1, index + 15);
 
-        for (int i = start; i <= end; i++) {
-            if (i == index) {
+        for(int i=inicia; i<=fim; i++){
+            if(i == index){
                 continue;
             }
 
             Instrucao other = result.get(i);
-            if (other.getOperation() == null) {
+            if(other.getop() == null){
                 continue;
             }
 
-            if (other.getReg2().matches("^\\d+$")) {
-                if (current.getReg1().equals(other.getReg1()) || current.getReg1().equals(other.getReg3())) {
+            if(other.getr2().matches("^\\d+$")){
+                if(media.getr1().equals(other.getr1()) || media.getr1().equals(other.getr3())){
                     return true;
                 }
-            } else {
-                if (current.getReg1().equals(other.getReg1()) ||
-                    current.getReg1().equals(other.getReg3()) ||
-                    current.getReg2().equals(other.getReg1()) ||
-                    current.getReg2().equals(other.getReg3()) ||
-                    current.getReg3().equals(other.getReg1()) ||
-                    current.getReg3().equals(other.getReg3())) {
+            }else{
+                if (media.getr1().equals(other.getr1()) ||
+                    media.getr1().equals(other.getr3()) ||
+                    media.getr2().equals(other.getr1()) ||
+                    media.getr2().equals(other.getr3()) ||
+                    media.getr3().equals(other.getr1()) ||
+                    media.getr3().equals(other.getr3())) {
                     return true;
                 }
             }
@@ -149,23 +149,23 @@ public class Tecnica {
         return false;
     }
 
-    private int countNops(Instrucao first, Instrucao second, Instrucao third) {
+    private int NOPS(Instrucao first, Instrucao second, Instrucao third){
         int count = 0;
-        if (third != null && third.getOperation() != null) {
+        if(third != null && third.getop() != null){
             count++;
         }
-        if (second.getOperation() != null) {
+        if(second.getop() != null){
             count++;
         }
         return count;
     }
 
-    private Instrucao[] generateNops(List<Instrucao> pipeline, int index) {
+    private Instrucao[] geraNOPS (List<Instrucao> pipeline, int index){
         Instrucao nop1 = new Instrucao("nop", "", "", "");
         Instrucao nop2 = new Instrucao("nop", "", "", "");
         Instrucao nop3 = new Instrucao("nop", "", "", "");
 
-        if (index < pipeline.size()) {
+        if(index < pipeline.size()){
             return new Instrucao[]{nop1, nop2, nop3};
         }
 

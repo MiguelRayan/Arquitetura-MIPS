@@ -1,33 +1,33 @@
 public class Instrucao {
-    private String operation;
-    private String reg1;
-    private String reg2;
-    private String reg3;
+    private String op;
+    private String r1;
+    private String r2;
+    private String r3;
 
-    public Instrucao(String operation, String reg1, String reg3, String reg2) {
-        this.operation = operation;
-        this.reg1 = reg1;
-        this.reg2 = reg2;
-        this.reg3 = reg3;
+    public Instrucao(String op, String r1, String r3, String r2) {
+        this.op = op;
+        this.r1 = r1;
+        this.r2 = r2;
+        this.r3 = r3;
     }
 
-    public String getOperation() {
-        return operation;
+    public String getop() {
+        return op;
     }
 
-    public String getReg1() {
-        return reg1;
+    public String getr1() {
+        return r1;
     }
 
-    public String getReg2() {
-        return reg2;
+    public String getr2() {
+        return r2;
     }
 
-    public String getReg3() {
-        return reg3;
+    public String getr3() {
+        return r3;
     }
 
     public String getFormattedValues() {
-        return String.format("%s %s %s %s", operation, reg1, reg2, reg3);
+        return String.format("%s %s %s %s", op, r1, r2, r3);
     }
 }
