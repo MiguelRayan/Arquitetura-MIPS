@@ -37,10 +37,10 @@ public class Main {
         String prefixo = "TESTE-";
         String sufixo = ".txt";
 
-        for(int i=1; i<2; i++){
+        for(int i=2; i<3; i++){
             String numArquivo = String.format("%02d", i);
             String tecnicasConflitoCaminho = base + prefixo + numArquivo + sufixo;
-            String outputFilePath = base + prefixo + numArquivo + "-RESULTADO.txt";
+            String saidaCaminho = base + prefixo + numArquivo + "-RESULTADO.txt";
 
             try{
                 // Ler as instruções do arquivo de entrada
@@ -54,7 +54,7 @@ public class Main {
                 }
                 
                 // Gravar o resultado no arquivo de saída
-                writeResultado(outputFilePath, resultado);
+                escreveResultado(saidaCaminho, resultado);
                 
             }catch (IOException e){
                 System.out.println("Erro ao processar o arquivo "+tecnicasConflitoCaminho+": "+e.getMessage());
@@ -64,7 +64,7 @@ public class Main {
         scanner.close();
     }
 
-    private static void writeResultado(String filePath, List<Instrucao> resultado) throws IOException {
+    private static void escreveResultado(String filePath, List<Instrucao> resultado) throws IOException {
         try(FileWriter writer = new FileWriter(filePath)){
             for(Instrucao instrucao : resultado){
                 writer.write(instrucao.getFormattedValues() + System.lineSeparator());

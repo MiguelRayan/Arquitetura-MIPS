@@ -18,7 +18,7 @@ public class LeitorArquivos {
         try (Scanner fileScanner = new Scanner(Arquivo)) {
             while (fileScanner.hasNextLine()) {
                 String linha = fileScanner.nextLine();
-                StringTokenizer tokens = new StringTokenizer(linha, ",$() ");
+                StringTokenizer tokens = new StringTokenizer(linha, ",$() \t");
 
                 String parts[] = new String[4];
                 int index = 0;
