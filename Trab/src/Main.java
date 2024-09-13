@@ -15,18 +15,18 @@ public class Main {
 
         String tecnicasConflito = scanner.nextLine();
         String escolhas[] = tecnicasConflito.split("\\s+");
-        List<Tecnica.TecnicaTipo> tecnicaTipos = new ArrayList<>();
+        List<Tecnicas.TecnicaTipo> tecnicaTipos = new ArrayList<>();
 
         for(String escolha : escolhas){
             switch(escolha){
                 case "1":
-                    tecnicaTipos.add(Tecnica.TecnicaTipo.BOLHA);
+                    tecnicaTipos.add(Tecnicas.TecnicaTipo.BOLHA);
                     break;
                 case "2":
-                    tecnicaTipos.add(Tecnica.TecnicaTipo.ADIANTAMENTO);
+                    tecnicaTipos.add(Tecnicas.TecnicaTipo.ADIANTAMENTO);
                     break;
                 case "3":
-                    tecnicaTipos.add(Tecnica.TecnicaTipo.REORDENAMENTO);
+                    tecnicaTipos.add(Tecnicas.TecnicaTipo.REORDENAMENTO);
                     break;
                 default:
                     System.out.println("Escolha inválida: "+escolha+". Esta escolha será ignorada.");
@@ -48,8 +48,8 @@ public class Main {
                 
                 // Aplicar todas as técnicas selecionadas
                 List<Instrucao> resultado = new ArrayList<>(instrucoes);
-                for(Tecnica.TecnicaTipo tecnicaTipo : tecnicaTipos){
-                    Tecnica tecnica = new Tecnica(tecnicaTipo);
+                for(Tecnicas.TecnicaTipo tecnicaTipo : tecnicaTipos){
+                    Tecnicas tecnica = new Tecnicas(tecnicaTipo);
                     resultado = tecnica.processarInstrucoes(resultado);
                 }
                 

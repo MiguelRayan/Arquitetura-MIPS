@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class Tecnica {
+public class Tecnicas {
 
     // Enum para as técnicas disponíveis
     public enum TecnicaTipo {
@@ -11,7 +11,7 @@ public class Tecnica {
     private TecnicaTipo tecnicaTipo;
 
     // Construtor para definir a técnica a ser utilizada
-    public Tecnica(TecnicaTipo tecnicaTipo){
+    public Tecnicas(TecnicaTipo tecnicaTipo){
         this.tecnicaTipo = tecnicaTipo;
     }
 
