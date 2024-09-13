@@ -44,7 +44,7 @@ public class Main {
 
             try{
                 // Ler as instruções do arquivo de entrada
-                List<Instrucao> instrucoes = LeitorArquivos.readInstrucoes(tecnicasConflitoCaminho);
+                List<Instrucao> instrucoes = LeitorArquivos.leInstrucao(tecnicasConflitoCaminho);
                 
                 // Aplicar todas as técnicas selecionadas
                 List<Instrucao> resultado = new ArrayList<>(instrucoes);

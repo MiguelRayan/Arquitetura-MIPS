@@ -6,16 +6,16 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 
 public class LeitorArquivos {
-    public static List<Instrucao> readInstrucoes(String filePath) throws FileNotFoundException {
+    public static List<Instrucao> leInstrucao(String filePath) throws FileNotFoundException {
         List<Instrucao> instrucoes = new ArrayList<>();
         MipsInstrucao TipoInstrucao = new MipsInstrucao();
 
-        File file = new File(filePath);
-        if (!file.exists()) {
+        File Arquivo = new File(filePath);
+        if (!Arquivo.exists()) {
             throw new FileNotFoundException("Arquivo não encontrado!");
         }
 
-        try (Scanner fileScanner = new Scanner(file)) {
+        try (Scanner fileScanner = new Scanner(Arquivo)) {
             while (fileScanner.hasNextLine()) {
                 String linha = fileScanner.nextLine();
                 StringTokenizer tokens = new StringTokenizer(linha, ",$() ");
