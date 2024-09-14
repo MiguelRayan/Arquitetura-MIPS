@@ -58,23 +58,37 @@ public class Tecnicas {
 
             // Verifica dependência de dados entre a instrução atual e a próxima
             if (atual.temDependenciaDeDados(proxima)) {
-                // Percorre as instruções seguintes para encontrar uma que não dependa da atual
-                for (int j = i + 2; j < result.size(); j++) {
-                    Instrucao instrucaoIndependente = result.get(j);
+                // Verifica se é uma instrução de Load
+                if (atual.isLoadInstruction()) {
+                    // Para instruções de Load, verificamos a necessidade de esperar o valor estar
+                    // no registrador
+                    System.out.println("Hazard de Load identificado entre " + atual.getFormattedValues() + " e "
+                            + proxima.getFormattedValues());
+                    continue; // Load é um caso especial que não podemos adiantar
+                }
 
-                    // Verifica se a instrução pode ser adiantada (sem dependência de dados e sem
-                    // hazards)
-                    if (!instrucaoIndependente.temDependenciaDeDados(atual)
-                            && !instrucaoIndependente.temDependenciaDeDados(proxima)
-                            && !isInstrucaoDeControle(instrucaoIndependente)) {
+                // Detecta se o hazard pode ser resolvido com adiantamento (forwarding)
+                if (proxima.podeReceberAdiantamentoDe(atual)) {
+                    System.out.println("Adiantamento aplicado entre " + atual.getFormattedValues() + " e "
+                            + proxima.getFormattedValues());
+                    proxima.receberAdiantamento(atual); // A instrução "proxima" recebe o valor adiantado da "atual"
+                } else {
+                    // Tenta buscar uma instrução seguinte para adiantar, como antes
+                    for (int j = i + 2; j < result.size(); j++) {
+                        Instrucao instrucaoIndependente = result.get(j);
 
-                        // Trocamos as instruções: colocamos a independente na posição da próxima
-                        result.set(i + 1, instrucaoIndependente);
-                        result.set(j, proxima);
+                        if (!instrucaoIndependente.temDependenciaDeDados(atual)
+                                && !instrucaoIndependente.temDependenciaDeDados(proxima)
+                                && !isInstrucaoDeControle(instrucaoIndependente)) {
 
-                        System.out.println("Adiantamento aplicado: " + instrucaoIndependente.getFormattedValues() +
-                                " adiantada para antes de " + proxima.getFormattedValues());
-                        break;
+                            // Adianta a instrução independente
+                            result.set(i + 1, instrucaoIndependente);
+                            result.set(j, proxima);
+
+                            System.out.println("Adiantamento aplicado: " + instrucaoIndependente.getFormattedValues() +
+                                    " adiantada para antes de " + proxima.getFormattedValues());
+                            break;
+                        }
                     }
                 }
             }
@@ -90,32 +104,43 @@ public class Tecnicas {
 
     private List<Instrucao> aplicarTecnicaReordenamento(List<Instrucao> pipeline) {
         List<Instrucao> result = new ArrayList<>(pipeline);
-
-        // Percorrer todas as instruções no pipeline
-        for(int i=0; i<result.size() - 1; i++){
+    
+        // Remove todos os NOPs da lista de instruções
+        result.removeIf(instrucao -> "NOP".equals(instrucao.getop()));
+    
+        int size = result.size();
+    
+        // Cria um grafo de dependências para melhor gerenciamento das instruções
+        boolean[][] dependencias = new boolean[size][size];
+    
+        // Preenche o grafo de dependências
+        for(int i=0; i<size; i++){
+            Instrucao atual = result.get(i);
+            for(int j=i+1; j<size; j++){
+                Instrucao futura = result.get(j);
+                if(futura.temDependenciaDeDados(atual)){
+                    dependencias[i][j] = true;
+                }
+            }
+        }
+    
+        // Processa cada instrução e tenta reordenar
+        for(int i=0; i<size-1; i++){
             Instrucao atual = result.get(i);
             Instrucao proxima = result.get(i + 1);
-
-            if(proxima.getop().equals("NOP")){
+    
+            if(!dependencias[i][i + 1]){
                 continue;
             }
-
-            // Verifica se há dependência de dados entre as instruções
-            if(proxima.temDependenciaDeDados(atual)){
-                // Dependência encontrada: não é possível reordenar
-                continue;
-            }
-
-            // Procurar uma instrução futura que não tenha dependências de dados com as
-            // instruções atuais
-            for(int j=i+2; j<result.size(); j++){
+    
+            // Tenta encontrar uma instrução futura que não tenha dependências com as instruções atuais
+            for(int j=i+2; j<size; j++){
                 Instrucao terceira = result.get(j);
-
-                // Ignorar se for NOP
-                if(terceira.getop().equals("NOP")){
+    
+                if(dependencias[i][j] || dependencias[i + 1][j]){
                     continue;
                 }
-
+    
                 // Verifica se é possível mover a terceira instrução (sem dependências)
                 if(!terceira.temDependenciaDeDados(atual) && !terceira.temDependenciaDeDados(proxima)){
                     result.set(i + 1, terceira);
@@ -126,9 +151,8 @@ public class Tecnicas {
                 }
             }
         }
-
         return result;
-    }
+    }    
 
     private void adicionaNoResultado(Instrucao instrucao, int ContaNOP, List<Instrucao> result,
             Instrucao[] nopInstrucaos, List<Instrucao> nops) {
@@ -147,19 +171,19 @@ public class Tecnicas {
         }
     }
 
-    private void reord(List<Instrucao> result, List<Instrucao> nops){
-        for(int i=0; i<result.size(); i++){
+    private void reord(List<Instrucao> result, List<Instrucao> nops) {
+        for (int i = 0; i < result.size(); i++) {
             Instrucao media = result.get(i);
-            if(media.getop() == null || verificaDependencia(i, result)){
+            if (media.getop() == null || verificaDependencia(i, result)) {
                 continue;
             }
 
-            for(int j=0; j<nops.size(); j++){
+            for (int j = 0; j < nops.size(); j++) {
                 Instrucao nop = nops.get(j);
 
-                if(nop.getop() != null
+                if (nop.getop() != null
                         || !nop.getr1().contains(media.getr1()) && !nop.getr3().contains(media.getr2()) &&
-                                !nop.getr3().contains(media.getr3())){
+                                !nop.getr3().contains(media.getr3())) {
                     continue;
                 }
 
@@ -170,13 +194,13 @@ public class Tecnicas {
             }
         }
 
-        for(int i=0; i<result.size(); i++){
+        for (int i = 0; i < result.size(); i++) {
             Instrucao media = result.get(i);
-            if(media.getop() != null){
+            if (media.getop() != null) {
                 continue;
             }
-            for(Instrucao nop : nops){
-                if(nop.getop() == null){
+            for (Instrucao nop : nops) {
+                if (nop.getop() == null) {
                     result.set(i, nop);
                     nops.remove(nop);
                     break;
@@ -190,8 +214,8 @@ public class Tecnicas {
         int inicia = Math.max(0, index - 15);
         int fim = Math.min(result.size() - 1, index + 15);
 
-        for(int i=inicia; i<=fim; i++){
-            if(i == index) {
+        for (int i = inicia; i <= fim; i++) {
+            if (i == index) {
                 continue;
             }
 
@@ -200,18 +224,18 @@ public class Tecnicas {
                 continue;
             }
 
-            if(other.getr2() != null && other.getr2().matches("^\\d+$")){
-                if((media.getr1() != null && media.getr1().equals(other.getr1())) ||
-                        (media.getr1() != null && media.getr1().equals(other.getr3()))){
+            if (other.getr2() != null && other.getr2().matches("^\\d+$")) {
+                if ((media.getr1() != null && media.getr1().equals(other.getr1())) ||
+                        (media.getr1() != null && media.getr1().equals(other.getr3()))) {
                     return true;
                 }
-            }else{
-                if((media.getr1() != null && media.getr1().equals(other.getr1())) ||
+            } else {
+                if ((media.getr1() != null && media.getr1().equals(other.getr1())) ||
                         (media.getr1() != null && media.getr1().equals(other.getr3())) ||
                         (media.getr2() != null && media.getr2().equals(other.getr1())) ||
                         (media.getr2() != null && media.getr2().equals(other.getr3())) ||
                         (media.getr3() != null && media.getr3().equals(other.getr1())) ||
-                        (media.getr3() != null && media.getr3().equals(other.getr3()))){
+                        (media.getr3() != null && media.getr3().equals(other.getr3()))) {
                     return true;
                 }
             }
@@ -221,10 +245,10 @@ public class Tecnicas {
 
     private int NOPS(Instrucao first, Instrucao second, Instrucao third) {
         int count = 0;
-        if(third != null && third.getop() != null){
+        if (third != null && third.getop() != null) {
             count++;
         }
-        if(second.getop() != null){
+        if (second.getop() != null) {
             count++;
         }
         return count;
@@ -235,7 +259,7 @@ public class Tecnicas {
         Instrucao nop2 = new Instrucao("nop", "", "", "");
         Instrucao nop3 = new Instrucao("nop", "", "", "");
 
-        if(index < pipeline.size()){
+        if (index < pipeline.size()) {
             return new Instrucao[] { nop1, nop2, nop3 };
         }
 

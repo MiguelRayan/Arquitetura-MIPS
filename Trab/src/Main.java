@@ -37,7 +37,7 @@ public class Main {
         String prefixo = "TESTE-";
         String sufixo = ".txt";
 
-        for(int i=1; i<2; i++){
+        for(int i=2; i<3; i++){
             String numArquivo = String.format("%02d", i);
             String tecnicasConflitoCaminho = base + prefixo + numArquivo + sufixo;
             String saidaCaminho = base + prefixo + numArquivo + "-RESULTADO.txt";
