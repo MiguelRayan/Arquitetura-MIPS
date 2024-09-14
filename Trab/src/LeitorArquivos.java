@@ -11,11 +11,11 @@ public class LeitorArquivos {
         MipsInstrucao TipoInstrucao = new MipsInstrucao();
 
         File Arquivo = new File(filePath);
-        if (!Arquivo.exists()) {
-            throw new FileNotFoundException("Arquivo não encontrado!");
+        if(!Arquivo.exists()){
+            throw new FileNotFoundException("Endereço errado");
         }
 
-        try (Scanner fileScanner = new Scanner(Arquivo)) {
+        try(Scanner fileScanner = new Scanner(Arquivo)){
             while (fileScanner.hasNextLine()) {
                 String linha = fileScanner.nextLine();
                 StringTokenizer tokens = new StringTokenizer(linha, ",$() \t");

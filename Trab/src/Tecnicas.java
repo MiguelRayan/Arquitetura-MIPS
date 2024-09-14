@@ -15,7 +15,7 @@ public class Tecnicas {
         this.tecnicaTipo = tecnicaTipo;
     }
 
-    public List<Instrucao> processarInstrucoes(List<Instrucao> pipeline){
+    public List<Instrucao> processarInstrucoes(List<Instrucao> pipeline) {
         switch (tecnicaTipo) {
             case BOLHA:
                 return aplicarTecnicaBolha(pipeline);
@@ -32,15 +32,15 @@ public class Tecnicas {
         List<Instrucao> result = new ArrayList<>();
         List<Instrucao> nops = new ArrayList<>();
 
-        for(int i=0; i< pipeline.size()-1; i++){
+        for (int i = 0; i < pipeline.size() - 1; i++) {
             Instrucao first = pipeline.get(i);
             Instrucao second = pipeline.get(i + 1);
             Instrucao third = (i < pipeline.size() - 2) ? pipeline.get(i + 2) : null;
 
-            int nopCount = NOPS(first, second, third);
+            int ContaNOP = NOPS(first, second, third);
             Instrucao[] nopInstrucaos = criaNOPS(pipeline, i);
 
-            addInstrucaosToResult(first, nopCount, result, nopInstrucaos, nops);
+            adicionaNoResultado(first, ContaNOP, result, nopInstrucaos, nops);
         }
 
         result.add(pipeline.get(pipeline.size() - 1));
@@ -49,23 +49,26 @@ public class Tecnicas {
         return result;
     }
 
-    private List<Instrucao> aplicarTecnicaAdiant(List<Instrucao> pipeline){
+    private List<Instrucao> aplicarTecnicaAdiant(List<Instrucao> pipeline) {
         List<Instrucao> result = new ArrayList<>(pipeline);
 
-        for(int i=0; i<result.size()-1; i++){
+        for (int i = 0; i < result.size() - 1; i++) {
             Instrucao atual = result.get(i);
             Instrucao proxima = result.get(i + 1);
 
-            if(atual.getr1() != null && (atual.getr1().equals(proxima.getr2()) || atual.getr1().equals(proxima.getr3()))){
-                // Encontrar uma instrução futura que seja independente e possa ser adiantada
-                for(int j=i+2; j<result.size(); j++){
+            // Verifica dependência de dados entre a instrução atual e a próxima
+            if (atual.temDependenciaDeDados(proxima)) {
+                // Percorre as instruções seguintes para encontrar uma que não dependa da atual
+                for (int j = i + 2; j < result.size(); j++) {
                     Instrucao instrucaoIndependente = result.get(j);
 
-                    // Verificação de dependência: Se a instrução não depende da atual nem da
-                    // próxima
-                    if(!instrucaoIndependente.temDependenciaDeDados(atual)
-                            && !instrucaoIndependente.temDependenciaDeDados(proxima)){
-                        // Troca a próxima instrução pela instrução independente
+                    // Verifica se a instrução pode ser adiantada (sem dependência de dados e sem
+                    // hazards)
+                    if (!instrucaoIndependente.temDependenciaDeDados(atual)
+                            && !instrucaoIndependente.temDependenciaDeDados(proxima)
+                            && !isInstrucaoDeControle(instrucaoIndependente)) {
+
+                        // Trocamos as instruções: colocamos a independente na posição da próxima
                         result.set(i + 1, instrucaoIndependente);
                         result.set(j, proxima);
 
@@ -79,27 +82,47 @@ public class Tecnicas {
         return result;
     }
 
+    private boolean isInstrucaoDeControle(Instrucao instrucao) {
+        // Checa se a instrução é um salto, branch, ou outra instrução de controle
+        return instrucao.getop().equals("j") || instrucao.getop().equals("jal") || instrucao.getop().equals("jr")
+                || instrucao.getop().startsWith("b"); // Branches: beq, bne, etc.
+    }
+
     private List<Instrucao> aplicarTecnicaReordenamento(List<Instrucao> pipeline) {
         List<Instrucao> result = new ArrayList<>(pipeline);
 
-        for(int i=0; i<result.size()-1; i++){
+        // Percorrer todas as instruções no pipeline
+        for(int i=0; i<result.size() - 1; i++){
             Instrucao atual = result.get(i);
             Instrucao proxima = result.get(i + 1);
 
-            // Verifica se r1, r2 e r3 não são nulos antes de fazer comparações
-            if(proxima.getr1() != null && (proxima.getr1().equals(atual.getr2()) || proxima.getr1().equals(atual.getr3()))) {
-                // Procura por uma instrução independente para reordenar
-                for(int j=i+2; j<result.size(); j++){
-                    Instrucao terceira = result.get(j);
+            if(proxima.getop().equals("NOP")){
+                continue;
+            }
 
-                    if(terceira != null && !terceira.temDependenciaDeDados(atual)
-                            && !terceira.temDependenciaDeDados(proxima)) {
-                        result.set(i + 1, terceira);
-                        result.set(j, proxima);
-                        System.out.println("Reordenamento aplicado: " + terceira.getFormattedValues()
-                                + " movida para antes de " + proxima.getFormattedValues());
-                        break;
-                    }
+            // Verifica se há dependência de dados entre as instruções
+            if(proxima.temDependenciaDeDados(atual)){
+                // Dependência encontrada: não é possível reordenar
+                continue;
+            }
+
+            // Procurar uma instrução futura que não tenha dependências de dados com as
+            // instruções atuais
+            for(int j=i+2; j<result.size(); j++){
+                Instrucao terceira = result.get(j);
+
+                // Ignorar se for NOP
+                if(terceira.getop().equals("NOP")){
+                    continue;
+                }
+
+                // Verifica se é possível mover a terceira instrução (sem dependências)
+                if(!terceira.temDependenciaDeDados(atual) && !terceira.temDependenciaDeDados(proxima)){
+                    result.set(i + 1, terceira);
+                    result.set(j, proxima);
+                    System.out.println("Reordenamento aplicado: " + terceira.getFormattedValues() + " movida antes de "
+                            + proxima.getFormattedValues());
+                    break;
                 }
             }
         }
@@ -107,17 +130,17 @@ public class Tecnicas {
         return result;
     }
 
-    private void addInstrucaosToResult(Instrucao instrucao, int nopCount, List<Instrucao> result,
+    private void adicionaNoResultado(Instrucao instrucao, int ContaNOP, List<Instrucao> result,
             Instrucao[] nopInstrucaos, List<Instrucao> nops) {
-        if(nopCount == 0){
+        if (ContaNOP == 0) {
             result.add(instrucao);
-        }else if(nopCount == 2){
+        } else if (ContaNOP == 2) {
             result.add(instrucao);
             result.add(nopInstrucaos[0]);
             result.add(nopInstrucaos[1]);
             nops.add(nopInstrucaos[0]);
             nops.add(nopInstrucaos[1]);
-        }else if(nopCount == 1){
+        } else if (ContaNOP == 1) {
             result.add(instrucao);
             result.add(nopInstrucaos[2]);
             nops.add(nopInstrucaos[2]);
@@ -134,8 +157,9 @@ public class Tecnicas {
             for(int j=0; j<nops.size(); j++){
                 Instrucao nop = nops.get(j);
 
-                if(nop.getop() != null || !nop.getr1().contains(media.getr1()) && !nop.getr3().contains(media.getr2()) &&
-                        !nop.getr3().contains(media.getr3())) {
+                if(nop.getop() != null
+                        || !nop.getr1().contains(media.getr1()) && !nop.getr3().contains(media.getr2()) &&
+                                !nop.getr3().contains(media.getr3())){
                     continue;
                 }
 
@@ -161,24 +185,24 @@ public class Tecnicas {
         }
     }
 
-    private boolean verificaDependencia(int index, List<Instrucao> result){
+    private boolean verificaDependencia(int index, List<Instrucao> result) {
         Instrucao media = result.get(index);
         int inicia = Math.max(0, index - 15);
         int fim = Math.min(result.size() - 1, index + 15);
 
-        for(int i = inicia; i <= fim; i++){
-            if(i == index){
+        for(int i=inicia; i<=fim; i++){
+            if(i == index) {
                 continue;
             }
 
             Instrucao other = result.get(i);
-            if(other.getop() == null){
+            if (other.getop() == null) {
                 continue;
             }
 
             if(other.getr2() != null && other.getr2().matches("^\\d+$")){
                 if((media.getr1() != null && media.getr1().equals(other.getr1())) ||
-                        (media.getr1() != null && media.getr1().equals(other.getr3()))) {
+                        (media.getr1() != null && media.getr1().equals(other.getr3()))){
                     return true;
                 }
             }else{
@@ -187,7 +211,7 @@ public class Tecnicas {
                         (media.getr2() != null && media.getr2().equals(other.getr1())) ||
                         (media.getr2() != null && media.getr2().equals(other.getr3())) ||
                         (media.getr3() != null && media.getr3().equals(other.getr1())) ||
-                        (media.getr3() != null && media.getr3().equals(other.getr3()))) {
+                        (media.getr3() != null && media.getr3().equals(other.getr3()))){
                     return true;
                 }
             }
@@ -195,7 +219,7 @@ public class Tecnicas {
         return false;
     }
 
-    private int NOPS(Instrucao first, Instrucao second, Instrucao third){
+    private int NOPS(Instrucao first, Instrucao second, Instrucao third) {
         int count = 0;
         if(third != null && third.getop() != null){
             count++;
@@ -206,7 +230,7 @@ public class Tecnicas {
         return count;
     }
 
-    private Instrucao[] criaNOPS(List<Instrucao> pipeline, int index){
+    private Instrucao[] criaNOPS(List<Instrucao> pipeline, int index) {
         Instrucao nop1 = new Instrucao("nop", "", "", "");
         Instrucao nop2 = new Instrucao("nop", "", "", "");
         Instrucao nop3 = new Instrucao("nop", "", "", "");

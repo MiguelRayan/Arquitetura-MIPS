@@ -4,7 +4,7 @@ public class Instrucao {
     private String r2;
     private String r3;
 
-    public Instrucao(String op, String r1, String r3, String r2) {
+    public Instrucao(String op, String r1, String r3, String r2){
         this.op = op;
         this.r1 = r1;
         this.r2 = r2;
@@ -31,7 +31,7 @@ public class Instrucao {
         return String.format("%s %s %s %s", op, r1, r2, r3);
     }
 
-    public boolean temDependenciaDeDados(Instrucao outra) {
+    public boolean temDependenciaDeDados(Instrucao outra){
         // Verifica se os registradores de leitura/escrita de 'outra' causam dependência com esta instrução
         return (this.getr1() != null && (this.getr1().equals(outra.getr2()) || this.getr1().equals(outra.getr3()))) ||
                (this.getr2() != null && (this.getr2().equals(outra.getr1()) || this.getr2().equals(outra.getr3()))) ||

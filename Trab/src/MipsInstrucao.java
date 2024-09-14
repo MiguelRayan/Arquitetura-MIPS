@@ -33,7 +33,7 @@ public class MipsInstrucao {
             "sw", "sb", "sh", "swl", "swr", "mthi", "mtlo", "mult", "multu", "div", "divu",
             "jr", "bltz", "bgez", "bltzal", "bgezal", "j", "jal"
         };
-        for(String op : ops) {
+        for(String op : ops){
             operaDado.add(op);
         }
     }
