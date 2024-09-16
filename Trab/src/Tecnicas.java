@@ -57,7 +57,7 @@ public class Tecnicas {
             Instrucao atual = resultado.get(i);
             Instrucao proxima = resultado.get(i + 1);
 
-            if(atual.temDependenciaDeDados(proxima) && !atual.isLoadInstruction()){
+            if(atual.temDependenciaDeDados(proxima) && !atual.InstrucaoCarregar()){
                 if(proxima.podeReceberAdiantamentoDe(atual)){
                     proxima.receberAdiantamento(atual);
                 }else{

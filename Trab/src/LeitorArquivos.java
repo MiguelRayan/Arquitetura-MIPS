@@ -28,7 +28,7 @@ public class LeitorArquivos {
                 }
 
                 Instrucao instrucao;
-                if(TipoInstrucao.isDestination(partes[0])){
+                if(TipoInstrucao.deDestino(partes[0])){
                     instrucao = new Instrucao(partes[0], partes[1], partes[3], partes[2]);
                 }else{
                     instrucao = new Instrucao(partes[0], partes[3], partes[1], partes[2]);

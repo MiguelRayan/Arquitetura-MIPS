@@ -58,8 +58,6 @@ public class Instrucao {
         
         // Dependência de registradores: A instrução atual depende do valor que a anterior gera?
         if (this.getr1() != null && (this.getr1().equals(anterior.getr2()) || this.getr1().equals(anterior.getr3()))) {
-            // Se a instrução atual está usando o valor que será gerado pela anterior (registros de destino), então
-            // podemos fazer o adiantamento.
             return true;
         }
 
@@ -73,10 +71,7 @@ public class Instrucao {
     }
 
     public void receberAdiantamento(Instrucao anterior) {
-        // Verifica se o registrador de destino da instrução anterior pode ser usado pela atual.
-        // Se a instrução atual depende do registrador de destino da anterior, fazemos o adiantamento.
     
-        // Se o r1 da atual depende do r2 ou r3 da anterior
         if (this.getr1() != null && this.getr1().equals(anterior.getr2())) {
             this.setr1(anterior.getResultado()); // Adianta o resultado da anterior para o r1 da atual
             System.out.println("Adiantamento aplicado: r1 da instrução " + this.getFormattedValues() + 
@@ -102,7 +97,7 @@ public class Instrucao {
         }
     }    
 
-    public boolean isLoadInstruction() {
+    public boolean InstrucaoCarregar() {
         // Verifica se a instrução é um "load" típico (como 'lw' em MIPS)
         return this.getop().equals("lw") || this.getop().startsWith("ld");
     }    

@@ -48,11 +48,11 @@ public class MipsInstrucao {
         }
     }
 
-    public boolean isDestination(String operation){
+    public boolean deDestino(String operation){
         return operaDestino.contains(operation);
     }
 
-    public boolean isMemoryOperation(String operation){
+    public boolean deMemoria(String operation){
         return operaMemoria.contains(operation);
     }
 }
