@@ -11,26 +11,26 @@ public class LeitorArquivos {
         MipsInstrucao TipoInstrucao = new MipsInstrucao();
 
         File Arquivo = new File(CaminhoArquivo);
-        if(!Arquivo.exists()){
+        if (!Arquivo.exists()) {
             throw new FileNotFoundException("Endereço errado");
         }
 
-        try(Scanner fileScanner = new Scanner(Arquivo)){
+        try (Scanner fileScanner = new Scanner(Arquivo)) {
             while (fileScanner.hasNextLine()) {
                 String linha = fileScanner.nextLine();
                 StringTokenizer tokens = new StringTokenizer(linha, ",$() \t");
 
                 String partes[] = new String[4];
                 int index = 0;
-                while(tokens.hasMoreTokens()){
+                while (tokens.hasMoreTokens()) {
                     partes[index] = tokens.nextToken();
                     index++;
                 }
 
                 Instrucao instrucao;
-                if(TipoInstrucao.deDestino(partes[0])){
+                if (TipoInstrucao.deDestino(partes[0])) {
                     instrucao = new Instrucao(partes[0], partes[1], partes[3], partes[2]);
-                }else{
+                } else {
                     instrucao = new Instrucao(partes[0], partes[3], partes[1], partes[2]);
                 }
 
