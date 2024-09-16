@@ -15,254 +15,152 @@ public class Tecnicas {
         this.tecnicaTipo = tecnicaTipo;
     }
 
-    public List<Instrucao> processarInstrucoes(List<Instrucao> pipeline) {
-        switch (tecnicaTipo) {
+    public List<Instrucao> processarInstrucoes(List<Instrucao> pipeline){
+        switch(tecnicaTipo){
             case BOLHA:
                 return aplicarTecnicaBolha(pipeline);
             case ADIANTAMENTO:
-                return aplicarTecnicaAdiant(pipeline);
+                return aplicarTecnicaAdiantamento(pipeline);
             case REORDENAMENTO:
                 return aplicarTecnicaReordenamento(pipeline);
             default:
-                throw new IllegalArgumentException("Técnica não reconhecida: " + tecnicaTipo);
+                throw new IllegalArgumentException("Técnica não reconhecida: "+tecnicaTipo);
         }
     }
 
     private List<Instrucao> aplicarTecnicaBolha(List<Instrucao> pipeline) {
-        List<Instrucao> result = new ArrayList<>();
-        List<Instrucao> nops = new ArrayList<>();
+        List<Instrucao> resultado = new ArrayList<>();
 
         for (int i = 0; i < pipeline.size() - 1; i++) {
-            Instrucao first = pipeline.get(i);
-            Instrucao second = pipeline.get(i + 1);
-            Instrucao third = (i < pipeline.size() - 2) ? pipeline.get(i + 2) : null;
+            Instrucao atual = pipeline.get(i);
+            Instrucao proxima = pipeline.get(i + 1);
 
-            int ContaNOP = NOPS(first, second, third);
-            Instrucao[] nopInstrucaos = criaNOPS(pipeline, i);
-
-            adicionaNoResultado(first, ContaNOP, result, nopInstrucaos, nops);
+            // Verificar se há dependência de dados entre a instrução atual e a próxima
+            if (temDependenciaDeDados(atual, proxima)) {
+                // Inserir NOP se houver dependência de dados
+                resultado.add(atual);
+                resultado.add(new Instrucao("NOP", "", "", ""));
+            } else {
+                resultado.add(atual);
+            }
         }
 
-        result.add(pipeline.get(pipeline.size() - 1));
-        reord(result, nops);
-
-        return result;
+        // Adicionar a última instrução ao resultado
+        resultado.add(pipeline.get(pipeline.size() - 1));
+        return resultado;
     }
 
-    private List<Instrucao> aplicarTecnicaAdiant(List<Instrucao> pipeline) {
-        List<Instrucao> result = new ArrayList<>(pipeline);
+    private List<Instrucao> aplicarTecnicaAdiantamento(List<Instrucao> pipeline) {
+        List<Instrucao> resultado = new ArrayList<>(pipeline);
 
-        for (int i = 0; i < result.size() - 1; i++) {
-            Instrucao atual = result.get(i);
-            Instrucao proxima = result.get(i + 1);
+        for(int i=0; i<resultado.size()-1; i++){
+            Instrucao atual = resultado.get(i);
+            Instrucao proxima = resultado.get(i + 1);
 
-            // Verifica dependência de dados entre a instrução atual e a próxima
-            if (atual.temDependenciaDeDados(proxima)) {
-                // Verifica se é uma instrução de Load
-                if (atual.isLoadInstruction()) {
-                    // Para instruções de Load, verificamos a necessidade de esperar o valor estar
-                    // no registrador
-                    System.out.println("Hazard de Load identificado entre " + atual.getFormattedValues() + " e "
-                            + proxima.getFormattedValues());
-                    continue; // Load é um caso especial que não podemos adiantar
-                }
-
-                // Detecta se o hazard pode ser resolvido com adiantamento (forwarding)
-                if (proxima.podeReceberAdiantamentoDe(atual)) {
-                    System.out.println("Adiantamento aplicado entre " + atual.getFormattedValues() + " e "
-                            + proxima.getFormattedValues());
-                    proxima.receberAdiantamento(atual); // A instrução "proxima" recebe o valor adiantado da "atual"
-                } else {
-                    // Tenta buscar uma instrução seguinte para adiantar, como antes
-                    for (int j = i + 2; j < result.size(); j++) {
-                        Instrucao instrucaoIndependente = result.get(j);
-
-                        if (!instrucaoIndependente.temDependenciaDeDados(atual)
-                                && !instrucaoIndependente.temDependenciaDeDados(proxima)
-                                && !isInstrucaoDeControle(instrucaoIndependente)) {
-
-                            // Adianta a instrução independente
-                            result.set(i + 1, instrucaoIndependente);
-                            result.set(j, proxima);
-
-                            System.out.println("Adiantamento aplicado: " + instrucaoIndependente.getFormattedValues() +
-                                    " adiantada para antes de " + proxima.getFormattedValues());
+            if(atual.temDependenciaDeDados(proxima) && !atual.isLoadInstruction()){
+                if(proxima.podeReceberAdiantamentoDe(atual)){
+                    proxima.receberAdiantamento(atual);
+                }else{
+                    for(int j=i+2; j<resultado.size(); j++){
+                        Instrucao independente = resultado.get(j);
+                        if(!independente.temDependenciaDeDados(atual) && !independente.temDependenciaDeDados(proxima)){
+                            resultado.set(i + 1, independente);
+                            resultado.set(j, proxima);
                             break;
                         }
                     }
                 }
             }
         }
-        return result;
-    }
-
-    private boolean isInstrucaoDeControle(Instrucao instrucao) {
-        // Checa se a instrução é um salto, branch, ou outra instrução de controle
-        return instrucao.getop().equals("j") || instrucao.getop().equals("jal") || instrucao.getop().equals("jr")
-                || instrucao.getop().startsWith("b"); // Branches: beq, bne, etc.
+        return resultado;
     }
 
     private List<Instrucao> aplicarTecnicaReordenamento(List<Instrucao> pipeline) {
-        List<Instrucao> result = new ArrayList<>(pipeline);
-    
-        // Remove todos os NOPs da lista de instruções
-        result.removeIf(instrucao -> "NOP".equals(instrucao.getop()));
-    
-        int size = result.size();
-    
-        // Cria um grafo de dependências para melhor gerenciamento das instruções
-        boolean[][] dependencias = new boolean[size][size];
-    
-        // Preenche o grafo de dependências
-        for(int i=0; i<size; i++){
-            Instrucao atual = result.get(i);
-            for(int j=i+1; j<size; j++){
-                Instrucao futura = result.get(j);
-                if(futura.temDependenciaDeDados(atual)){
-                    dependencias[i][j] = true;
-                }
-            }
-        }
-    
-        // Processa cada instrução e tenta reordenar
-        for(int i=0; i<size-1; i++){
-            Instrucao atual = result.get(i);
-            Instrucao proxima = result.get(i + 1);
-    
+        List<Instrucao> resultado = new ArrayList<>(pipeline);
+        resultado.removeIf(instrucao -> "NOP".equals(instrucao.getop()));
+
+        boolean[][] dependencias = calcularDependencias(resultado);
+
+        for(int i=0; i<resultado.size() - 1; i++){
             if(!dependencias[i][i + 1]){
                 continue;
             }
-    
-            // Tenta encontrar uma instrução futura que não tenha dependências com as instruções atuais
-            for(int j=i+2; j<size; j++){
-                Instrucao terceira = result.get(j);
-    
-                if(dependencias[i][j] || dependencias[i + 1][j]){
-                    continue;
-                }
-    
-                // Verifica se é possível mover a terceira instrução (sem dependências)
-                if(!terceira.temDependenciaDeDados(atual) && !terceira.temDependenciaDeDados(proxima)){
-                    result.set(i + 1, terceira);
-                    result.set(j, proxima);
-                    System.out.println("Reordenamento aplicado: " + terceira.getFormattedValues() + " movida antes de "
-                            + proxima.getFormattedValues());
+
+            for(int j=i+2; j<resultado.size(); j++){
+                Instrucao futura = resultado.get(j);
+                if(!dependencias[i][j] && !dependencias[i + 1][j]){
+                    resultado.set(i + 1, futura);
+                    resultado.set(j, resultado.get(i + 1));
                     break;
                 }
             }
         }
-        return result;
-    }    
+        return resultado;
+    }
 
-    private void adicionaNoResultado(Instrucao instrucao, int ContaNOP, List<Instrucao> result,
-            Instrucao[] nopInstrucaos, List<Instrucao> nops) {
-        if (ContaNOP == 0) {
-            result.add(instrucao);
-        } else if (ContaNOP == 2) {
-            result.add(instrucao);
-            result.add(nopInstrucaos[0]);
-            result.add(nopInstrucaos[1]);
-            nops.add(nopInstrucaos[0]);
-            nops.add(nopInstrucaos[1]);
-        } else if (ContaNOP == 1) {
-            result.add(instrucao);
-            result.add(nopInstrucaos[2]);
-            nops.add(nopInstrucaos[2]);
+    private boolean[][] calcularDependencias(List<Instrucao> pipeline) {
+        int tamanho = pipeline.size();
+        boolean[][] dependencias = new boolean[tamanho][tamanho];
+
+        for(int i=0; i<tamanho; i++){
+            for (int j = i + 1; j < tamanho; j++) {
+                dependencias[i][j] = pipeline.get(j).temDependenciaDeDados(pipeline.get(i));
+            }
+        }
+
+        return dependencias;
+    }
+
+    private void adicionarAoResultado(Instrucao instrucao, int quantidadeNops, List<Instrucao> resultado, Instrucao[] nops, List<Instrucao> nopsList) {
+        resultado.add(instrucao);
+        if(quantidadeNops > 0){
+            resultado.add(nops[quantidadeNops - 1]);
+            nopsList.add(nops[quantidadeNops - 1]);
         }
     }
 
-    private void reord(List<Instrucao> result, List<Instrucao> nops) {
-        for (int i = 0; i < result.size(); i++) {
-            Instrucao media = result.get(i);
-            if (media.getop() == null || verificaDependencia(i, result)) {
+    private void reordenarResultado(List<Instrucao> resultado, List<Instrucao> nops) {
+        for(int i=0; i<resultado.size(); i++){
+            Instrucao instrucao = resultado.get(i);
+            if (instrucao.getop() == null || !temDependencia(i, resultado)) {
                 continue;
             }
 
-            for (int j = 0; j < nops.size(); j++) {
+            for(int j=0; j<nops.size(); j++){
                 Instrucao nop = nops.get(j);
-
-                if (nop.getop() != null
-                        || !nop.getr1().contains(media.getr1()) && !nop.getr3().contains(media.getr2()) &&
-                                !nop.getr3().contains(media.getr3())) {
-                    continue;
-                }
-
-                result.remove(media);
-                nops.set(j, media);
-                i--;
-                break;
-            }
-        }
-
-        for (int i = 0; i < result.size(); i++) {
-            Instrucao media = result.get(i);
-            if (media.getop() != null) {
-                continue;
-            }
-            for (Instrucao nop : nops) {
                 if (nop.getop() == null) {
-                    result.set(i, nop);
-                    nops.remove(nop);
+                    resultado.set(i, nop);
+                    nops.set(j, instrucao);
                     break;
                 }
             }
         }
     }
 
-    private boolean verificaDependencia(int index, List<Instrucao> result) {
-        Instrucao media = result.get(index);
-        int inicia = Math.max(0, index - 15);
-        int fim = Math.min(result.size() - 1, index + 15);
-
-        for (int i = inicia; i <= fim; i++) {
-            if (i == index) {
-                continue;
-            }
-
-            Instrucao other = result.get(i);
-            if (other.getop() == null) {
-                continue;
-            }
-
-            if (other.getr2() != null && other.getr2().matches("^\\d+$")) {
-                if ((media.getr1() != null && media.getr1().equals(other.getr1())) ||
-                        (media.getr1() != null && media.getr1().equals(other.getr3()))) {
-                    return true;
-                }
-            } else {
-                if ((media.getr1() != null && media.getr1().equals(other.getr1())) ||
-                        (media.getr1() != null && media.getr1().equals(other.getr3())) ||
-                        (media.getr2() != null && media.getr2().equals(other.getr1())) ||
-                        (media.getr2() != null && media.getr2().equals(other.getr3())) ||
-                        (media.getr3() != null && media.getr3().equals(other.getr1())) ||
-                        (media.getr3() != null && media.getr3().equals(other.getr3()))) {
-                    return true;
-                }
+    private boolean temDependencia(int indice, List<Instrucao> resultado) {
+        Instrucao atual = resultado.get(indice);
+        for(int i=0; i<resultado.size(); i++){
+            if(i != indice && resultado.get(i).temDependenciaDeDados(atual)) {
+                return true;
             }
         }
         return false;
     }
 
-    private int NOPS(Instrucao first, Instrucao second, Instrucao third) {
-        int count = 0;
-        if (third != null && third.getop() != null) {
-            count++;
-        }
-        if (second.getop() != null) {
-            count++;
-        }
-        return count;
+    private boolean temDependenciaDeDados(Instrucao atual, Instrucao proxima) {
+        String regEscritaAtual = atual.getr1(); // Registrador escrito pela primeira instrução
+        String regLidoProxima1 = proxima.getr2(); // Primeiro registrador lido pela próxima instrução
+        String regLidoProxima2 = proxima.getr3(); // Segundo registrador lido pela próxima instrução
+
+        // Verifica se o registrador escrito pela atual é lido pela próxima instrução
+        return regEscritaAtual.equals(regLidoProxima1) || regEscritaAtual.equals(regLidoProxima2);
     }
 
-    private Instrucao[] criaNOPS(List<Instrucao> pipeline, int index) {
-        Instrucao nop1 = new Instrucao("nop", "", "", "");
-        Instrucao nop2 = new Instrucao("nop", "", "", "");
-        Instrucao nop3 = new Instrucao("nop", "", "", "");
-
-        if (index < pipeline.size()) {
-            return new Instrucao[] { nop1, nop2, nop3 };
-        }
-
-        return new Instrucao[] { nop1, nop2, nop3 };
+    private Instrucao[] criarNops() {
+        return new Instrucao[] {
+            new Instrucao("NOP", "", "", ""),
+            new Instrucao("NOP", "", "", ""),
+            new Instrucao("NOP", "", "", "")
+        };
     }
 }

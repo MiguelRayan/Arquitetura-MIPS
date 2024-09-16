@@ -6,11 +6,11 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 
 public class LeitorArquivos {
-    public static List<Instrucao> leInstrucao(String filePath) throws FileNotFoundException {
+    public static List<Instrucao> leInstrucao(String CaminhoArquivo) throws FileNotFoundException {
         List<Instrucao> instrucoes = new ArrayList<>();
         MipsInstrucao TipoInstrucao = new MipsInstrucao();
 
-        File Arquivo = new File(filePath);
+        File Arquivo = new File(CaminhoArquivo);
         if(!Arquivo.exists()){
             throw new FileNotFoundException("Endereço errado");
         }
@@ -20,18 +20,18 @@ public class LeitorArquivos {
                 String linha = fileScanner.nextLine();
                 StringTokenizer tokens = new StringTokenizer(linha, ",$() \t");
 
-                String parts[] = new String[4];
+                String partes[] = new String[4];
                 int index = 0;
                 while(tokens.hasMoreTokens()){
-                    parts[index] = tokens.nextToken();
+                    partes[index] = tokens.nextToken();
                     index++;
                 }
 
                 Instrucao instrucao;
-                if(TipoInstrucao.isDestination(parts[0])){
-                    instrucao = new Instrucao(parts[0], parts[1], parts[3], parts[2]);
+                if(TipoInstrucao.isDestination(partes[0])){
+                    instrucao = new Instrucao(partes[0], partes[1], partes[3], partes[2]);
                 }else{
-                    instrucao = new Instrucao(parts[0], parts[3], parts[1], parts[2]);
+                    instrucao = new Instrucao(partes[0], partes[3], partes[1], partes[2]);
                 }
 
                 instrucoes.add(instrucao);
